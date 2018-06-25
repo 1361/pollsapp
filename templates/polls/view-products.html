@@ -8,7 +8,8 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
   <style>
-    /* Remove the navbar's default rounded borders and increase the bottom margin */
+    /* Remove the navbar's default rounded borders and increase the
+    bottom margin */
     .navbar {
       margin-bottom: 50px;
       border-radius: 0;
@@ -77,7 +78,10 @@
 
     <div class="col-sm-12">
       <div class="panel panel-primary">
-        <div class="panel-heading"> {{ listing.listing_name }}</div>
+        <div class="panel-heading">
+            <p>Listing Description: {{ listing.listing_name }}</p>
+            <p>Producer: {{ listing.producer.first_name}}</p>
+        </div>
         <div class="panel-body">
             <p>Listing Date: {{ listing.pub_date }}</p>
             {% for product in listing.products_set.all %}
@@ -87,15 +91,34 @@
                 <p>Cost/Unit: <strong>${{ product.list_price }} per {{ product.unit }}</strong></p>
                 --
                 </ol>
+                <form onsubmit="myFunction()" oninput="x.value=parseInt(quantity.value)* parseInt(b.value)" action="{% url 'polls:order-form' %}"  method="post" >
+            {% csrf_token %}
+            <input id="listing_id" type = 'hidden' value="{{ listing.id }}" name="listing_id">
+            <input id="type" type = 'hidden' value="{{ product.type }}" name="type">
+                    <p>Input Quantity to Order</p>
+                    <input id="quantity" type = "number" name="quantity" value="">
+
+
+
+                <input type="hidden" id="b" value="{{ product.list_price }}">
+                <p>Estimated Subtotal</p>
+                     $<output name="x" for="quantity b"></output>
+
+
+              <input type="submit" value="Add to Cart" style="height:50px;width:300px;background-color: cornflowerblue">
+<script>
+function myFunction() {
+    alert("Products Added to Your Cart");
+}
+</script>
+
+            </form>
+
             {% endfor %}
+
         </div>
         <div class="panel-footer">
 
-            <form action="{% url 'polls:order-form' %}"  method="post" >
-            {% csrf_token %}
-            <input id="listing_id" type = 'hidden' value="{{ listing.id }}" name="listing_id">
-                 <input type="submit" value="Order" style="height:50px;width:300px;background-color: cornflowerblue">
-            </form>
 
 
         </div>
@@ -105,6 +128,7 @@
         {% else %}
             <p>No polls are available.</p>
         {% endif %}
+   <li><a href="{% url 'polls:order-confirm' %}">Checkout</a></li>
   </div>
 </div>
 <footer class="container-fluid text-center">

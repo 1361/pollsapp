@@ -19,7 +19,7 @@ class ProducerProfileForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ('username', 'password1', 'password2',  'first_name', 'last_name', 'email', 'phone_number', 'address',)
+        fields = ('username', 'password1', 'password2',  'first_name', 'last_name', 'email', 'phone_number', 'address', 'operation_name')
 
 
 class ConsumerProfileForm(UserCreationForm):

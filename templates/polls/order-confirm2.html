@@ -62,7 +62,7 @@
                <li><a href="{% url 'logout'%}?next={{request.path}}"><span class="glyphicon glyphicon-log-in"></span><h5>Logout</h5> </a></li>
                 {% else %}
                <li><a href="{% url 'login'%}?next={{request.path}}"><span class="glyphicon glyphicon-log-in"></span><h5>Login</h5> </a></li>
-            {% endif %}
+                {% endif %}
            </ul>
       </ul>
     </div>
@@ -70,72 +70,60 @@
 </nav>
 
 
-<body>
 
-<form action="{% url 'polls:index2' %}"  method="post">
-    {% if user.is_authenticated %}
-    {% csrf_token %}
-    <label for="type"><h3>Name of Listing </h3> </label>
-    <input id = "producerid" type="hidden" value={{ user.id }} name="producerid">
-    <input id="listing_name" type="text" name="listing_name">
-    <p></p>
+<div class="container">
+  <div class="row">
+      <p>Order Reference Number: <strong>{{ order.id }}</strong></p>
+      {% if user.is_authenticated %}
+                 <p>User Id: {{ user.id }} {{ user.username }}</p>
+      {% endif %}
+  {% for item in products %}
+     <p>Listing: {{ item.products.listing.listing_name }} | Product: {{ item.products.type }} | Quantity: {{ item.quantity }} | Subtotal:{{ item.subtotal }}    </p>
 
+{% endfor %}
+<p>Grand Total: {{ grandtotal.subtotal__sum }}</p>
+      <p>
+          <form action="{% url 'polls:checkout_page'  %}" method="POST">
+            {% csrf_token %}
+            <br>
+             <input id="cost" type = 'number' value = "{{ grandtotal.subtotal__sum }}" name="cost">
+             <p>input shipping address</p> <input id="shipping_address" type="text" name="shipping_address">
+            <br>
+            <br>
+              <script
+                src="https://checkout.stripe.com/checkout.js" class="stripe-button"
+                data-key="pk_test_zgA675mwTdEfIKiI5kUMzIil"
+                data-amount=grandtotal.subtotal__sum
+                data-name="Checkout"
+                data-description="Charge"
+                data-image="https://stripe.com/img/documentation/checkout/marketplace.png"
+                data-locale="auto">
+              </script>
+            </form>
+      </p>
+      <p></p>
 
-{#    <p>(Enter up to 3 Products)</p>#}
-{#    <br>#}
-{#    <p></p>#}
-{#    <p><h4>Product #1</h4></p>#}
-{#     <label for="type"> Input Beef Type </label>#}
-{#    <input id="type" type="text" name="type">#}
-{#    <p></p>#}
-{#    <label for="type">Input Amount Available</label>#}
-{#    <input id="amount_available" type="text" name="amount_available">#}
-{#    <p></p>#}
-{#    <label for="type">Input List Price</label>#}
-{#    <input id="list_price" type="text" name="list_price">#}
-{#    <p></p>#}
-{##}
-{#     <br>#}
-{#    <p></p>#}
-{#    <p><h4>Product #2 (Optional)</h4></p>#}
-{#     <label for="type"> Input Beef Type </label>#}
-{#    <input id="type2" type="text" name="type2">#}
-{#    <p></p>#}
-{#    <label for="type">Input Amount Available</label>#}
-{#    <input id="amount_available2" type="text" name="amount_available2">#}
-{#    <p></p>#}
-{#    <label for="type">Input List Price</label>#}
-{#    <input id="list_price2" type="text" name="list_price2">#}
-{#    <p></p>#}
-{##}
-{#     <br>#}
-{#    <p></p>#}
-{#    <p><h4>Product #3 (Optional)</h4></p>#}
-{#     <label for="type"> Input Beef Type </label>#}
-{#    <input id="type3" type="text" name="type3">#}
-{#    <p></p>#}
-{#    <label for="type">Input Amount Available</label>#}
-{#    <input id="amount_available3" type="text" name="amount_available3">#}
-{#    <p></p>#}
-{#    <label for="type">Input List Price</label>#}
-{#    <input id="list_price3" type="text" name="list_price3">#}
-{#    <p></p>#}
-    <input type="submit" value="Next" style="height:50px;width:300px;background-color: cornflowerblue">
-    {% endif %}
-</form>
-</body>
-<br>
-<br>
+{% comment %}
+    <div class="col-sm-12">
+      <div class="panel panel-primary">
+        <div class="panel-heading"> {{ pid.listing_name }}</div>
+        <div class="panel-body">
+            <p>{{ pid.pub_date }}</p>
+            <form action=""  method="post" >
+            {% csrf_token %}
+            {% for product in products %}
+                <li>{{ product.type }} -- {{ product.amount_available }} -- ${{ product.list_price }}</li>
+                <input id="{{ product.type }}quantity" name="{{ product.type }}quantity">
 
-{% comment %}<form action="{% url 'polls:list-products' %}" method="post">
-<form action="{% url 'polls:vote' question.id %}" method="post">
-{% csrf_token %}
-    <label for="type">Add Another </label>
-    <input id="type" type="text" name="type">
-    <input type="submit" value="Submit">
-</form>
+            {% endfor %}
+            <input type="submit" value="I want to Order" style="height:50px;width:300px;background-color: cornflowerblue">
+            </form>
+        </div>
+      </div>
+    </div>{% endcomment %}
 
-</form>{% endcomment %}
+  </div>
+
 
 </body>
 </html>

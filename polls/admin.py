@@ -45,4 +45,5 @@ admin.site.register(Question)
 admin.site.register(Listing)
 admin.site.register(Cart)
 admin.site.register(Order)
+admin.site.register(Products)
 

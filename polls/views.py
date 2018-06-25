@@ -8,8 +8,9 @@ from django.contrib.auth.forms import UserCreationForm
 from polls.forms import ProducerProfileForm, ConsumerProfileForm
 from django.contrib.auth import login, authenticate
 from mysite import settings
+from django.db.models import Sum
 from django.contrib.auth.models import Group
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, AbstractBaseUser
 import stripe
 from decimal import Decimal
 
@@ -33,6 +34,7 @@ class IndexView(generic.ListView):
 class ListView(generic.ListView):
     template_name = 'polls/list-products.html'
     context_object_name = 'latest_question_list'
+
 
     def get_queryset(self):
         """Return the last five published questions."""
@@ -145,7 +147,7 @@ def checkout(request):
             description="The product charged to the user"
         )
 
-        ord = Order.objects.create(user=User.objects.get(pk=user_id), cart=Cart.objects.get(pk=crt.id), charge_id=charge.stripe_id, shipping_address=shipping_address, order_date=timezone.now())
+        ord = Order.objects.create(cart=Cart.objects.filter(pk=crt.id), charge_id=charge.stripe_id, shipping_address=shipping_address, order_date=timezone.now())
         ord.save()
         product = Products.objects.get(pk=product_id)
         plisting = product.listing
@@ -156,6 +158,42 @@ def checkout(request):
         # new_car.save()
  #       return HttpResponseRedirect('/polls/thankyou', {'ord': ord})
         return render(request, 'polls/thankyou.html', {'ord': ord, 'ch1': ch1, 'plisting':plisting })
+
+
+# def thankyou(request):
+#     return render(request, "polls/thankyou.html")
+
+def checkout2(request):
+
+    cost = request.POST.get('cost')
+    shipping_address= request.POST.get('shipping_address')
+    co = float(cost)*100
+    ch1 = int(co)
+    token = request.POST.get("stripeToken")
+    try:
+        charge = stripe.Charge.create(
+            amount=ch1,
+            currency="usd",
+            source=token,
+            description="The product charged to the user"
+        )
+
+        ord = Order.objects.create(
+            charge_id=charge.stripe_id,
+            shipping_address=shipping_address,
+            order_date=timezone.now()
+        )
+        items = Cart.objects.filter(user=(User.objects.get(pk=request.user.id)))
+        cart_list = list(items)
+        ord.cart.add(*cart_list)
+        ord.save()
+    except stripe.error.CardError as ce:
+        return False, ce
+
+    else:
+        # new_car.save()
+ #       return HttpResponseRedirect('/polls/thankyou', {'ord': ord})
+        return render(request, 'polls/thankyou.html', {'ord': ord, 'ch1': ch1})
 
 
 # def thankyou(request):
@@ -185,27 +223,47 @@ def order_form(request):
     pid = Listing.objects.get(pk=request.POST['listing_id'])
 
     products = pid.products_set.all()
-    return render(request, 'polls/order-form.html', {'pid': pid, 'products': products})
+    return render(request, 'polls/view-products.html', {'pid': pid, 'products': products})
 
 
 def shopping_cart(request):
+    # type = request.POST.get('type')
+    # quantity = request.POST.get('quantity')
+    # request.session['quantity'] = quantity
+    # listing_id = request.POST.get('id')
+    # listing = Listing.objects.get(pk=listing_id)
+    # p = listing.products_set.get(type=type)
+    # cost = float(p.list_price)
+    # qu = float(quantity)
+    # total = cost*qu
+    #order = Cart.objects.create(quantity=quantity)
+    #order.save()
+    cart_items = Cart.objects.filter(user=User.objects.get(pk=request.user.id))
+    grand_total = cart_items.aggregate(Sum('subtotal'))
+    products = cart_items
+    return render(request, 'polls/order-confirm2.html', {'cart': cart_items, 'products':products, 'grandtotal':grand_total})
+
+def shopping_cart2(request):
+    pid = Listing.objects.get(pk=request.POST['listing_id'])
     type = request.POST.get('type')
     quantity = request.POST.get('quantity')
-    listing_id = request.POST.get('id')
-    listing = Listing.objects.get(pk=listing_id)
-    p = listing.products_set.get(type=type)
+    products = pid.products_set.all()
+    p = products.get(type=type)
     cost = float(p.list_price)
     qu = float(quantity)
     total = cost*qu
-    order = Cart.objects.create(quantity=quantity)
-    order.save()
-    return render(request, 'polls/order-confirm.html', {'listing': listing, 'p': p, 'order': order, 'total': total})
+    cart = Cart.objects.create(quantity=quantity,products=p, subtotal=total, user=(User.objects.get(pk=request.user.id)))
+    cart.save()
+    #order = Cart.objects.create(quantity=quantity)
+    #order.save()
+    return redirect('polls:view-products')
 
 
-@permission_required('polls.add_question')
+@permission_required('polls.add_listing')
 def new_listing(request):
     listing_name = request.POST.get('listing_name')
-    new_listing = Listing(listing_name=listing_name, pub_date=timezone.now())
+    userid = request.POST.get('producerid')
+    new_listing = Listing.objects.create(listing_name=listing_name, pub_date=timezone.now(), producer=(User.objects.get(pk=request.user.id)))
     new_listing.save()
     p = new_listing
     return render(request, 'polls/edit-listing.html', {'p': p})
@@ -222,7 +280,7 @@ def new_listing(request):
     # p.products_set.create(type=type3, amount_available=amount_available3, list_price=list_price3)
     # p.products_set.create(choice_text=ch2, votes=0)
 
-@permission_required('polls.add_question')
+@permission_required('polls.add_listing')
 def edit_listing(request):
     type1 = request.POST.get('type')
     amount_available = request.POST.get('amount_available')

@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, AbstractBaseUser
 
 
 # Create your models here.
@@ -22,9 +22,11 @@ class Choice(models.Model):
         return self.choice_text
 
 
+
 class Listing(models.Model):
     listing_name = models.CharField(max_length=200)
     pub_date = models.DateTimeField('date published')
+    producer = models.ForeignKey(User, default='aminarick2')
 
     def __str__(self):
         return self.listing_name
@@ -42,13 +44,14 @@ class Products(models.Model):
 
 
 class Cart(models.Model):
-    products = models.ManyToManyField(Products)
+    products = models.ForeignKey(Products)
+    user = models.ForeignKey(User, default=1)
     quantity = models.IntegerField(default=0)
+    subtotal = models.IntegerField(default=0)
 
 
 class Order(models.Model):
-    cart = models.OneToOneField(Cart)
+    cart = models.ManyToManyField(Cart)
     charge_id = models.CharField(max_length=400)
-    user = models.ForeignKey(User)
     shipping_address = models.CharField(max_length=200)
     order_date = models.DateTimeField('Date Ordered')
