@@ -1,7 +1,7 @@
 beautifulsoup4==4.6.0
 certifi==2018.4.16
 chardet==3.0.4
-Django==1.8
+Django==1.11.23
 django-jsonfield==1.0.1
 django-stripe-payments==2.0.0
 gunicorn==19.8.1
